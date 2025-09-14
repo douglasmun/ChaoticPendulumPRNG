@@ -163,4 +163,4 @@ The Enhanced Chaotic Pendulum PRNG demonstrates the fascinating intersection of 
 
 The visual nature of the system allows users to directly observe the chaotic behavior that underlies the randomness, making abstract concepts tangible and engaging. This transparency is both a strength (educational value) and a weakness (security vulnerability), highlighting the trade-offs involved in different approaches to random number generation.
 
-**Remember**: Beautiful chaos doesn't always equal secure randomness, but it certainly makes for compelling science! 🌪️
+**Remember**: Beautiful chaos doesn't always equal secure randomness, but it certainly makes for compelling science!
