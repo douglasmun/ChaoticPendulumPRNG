@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Enhanced Chaotic Pendulum PRNG</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <title>Enhanced Chaotic Pendulum PRNG - Production Build</title>
   <style>
     :root {
       --neon-blue: #0ff;
@@ -11,16 +12,17 @@
       --neon-green: #0f0;
       --neon-purple: #9457eb;
       --neon-orange: #ff8c00;
+      --neon-red: #ff0000;
       --dark-bg: #111;
       --darker-bg: #080808;
     }
-    
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       font-family: 'Courier New', monospace;
       background: var(--darker-bg);
@@ -29,17 +31,86 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
-    
+
     .container {
       max-width: 1600px;
       margin: 0 auto;
     }
-    
+
+    /* Security Warning Banner */
+    .security-warning {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: linear-gradient(135deg, #ff0000, #cc0000);
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+      border: 2px solid #ff6666;
+      border-radius: 5px;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5);
+      animation: pulse-warning 2s infinite;
+    }
+
+    @keyframes pulse-warning {
+      0%, 100% { box-shadow: 0 4px 20px rgba(255, 0, 0, 0.5); }
+      50% { box-shadow: 0 4px 30px rgba(255, 0, 0, 0.8); }
+    }
+
+    .security-warning-title {
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .security-warning-text {
+      font-size: 0.9rem;
+      font-weight: normal;
+      opacity: 0.95;
+    }
+
+    /* Status Indicators */
+    .status-bar {
+      background: var(--dark-bg);
+      border: 1px solid var(--neon-blue);
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85rem;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-healthy { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+    .status-warning { background: var(--neon-orange); box-shadow: 0 0 8px var(--neon-orange); }
+    .status-critical { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); animation: blink 1s infinite; }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+
     header {
       text-align: center;
       margin-bottom: 1.5rem;
     }
-    
+
     h1 {
       font-size: 2.5rem;
       margin-bottom: 0.5rem;
@@ -47,7 +118,7 @@
       color: var(--neon-blue);
       letter-spacing: 2px;
     }
-    
+
     .subtitle {
       color: var(--neon-green);
       margin-bottom: 1.5rem;
@@ -58,27 +129,27 @@
       margin-right: auto;
       line-height: 1.5;
     }
-    
+
     h2 {
       font-size: 1.2rem;
       margin-bottom: 0.5rem;
       color: var(--neon-pink);
       text-shadow: 0 0 5px var(--neon-pink);
     }
-    
+
     .dashboard {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
       margin-bottom: 1.5rem;
     }
-    
+
     @media (max-width: 900px) {
       .dashboard {
         grid-template-columns: 1fr;
       }
     }
-    
+
     .stat-box {
       background: var(--dark-bg);
       border: 1px solid var(--neon-purple);
@@ -86,7 +157,7 @@
       padding: 12px;
       box-shadow: 0 0 10px var(--neon-purple);
     }
-    
+
     #controls {
       display: flex;
       flex-wrap: wrap;
@@ -99,7 +170,7 @@
       border-radius: 5px;
       box-shadow: 0 0 10px var(--neon-green);
     }
-    
+
     label {
       display: flex;
       align-items: center;
@@ -107,12 +178,12 @@
       color: var(--neon-green);
       font-size: 0.9rem;
     }
-    
+
     input[type="range"] {
       width: 120px;
       accent-color: var(--neon-green);
     }
-    
+
     button {
       background: var(--dark-bg);
       color: var(--neon-blue);
@@ -125,12 +196,17 @@
       transition: all 0.3s;
       box-shadow: 0 0 5px var(--neon-blue);
     }
-    
-    button:hover {
+
+    button:hover:not(:disabled) {
       background: rgba(0, 255, 255, 0.1);
       box-shadow: 0 0 15px var(--neon-blue);
     }
-    
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     #canvas-container {
       position: relative;
       width: 100%;
@@ -143,27 +219,27 @@
       height: 60vh;
       background: var(--dark-bg);
     }
-    
+
     #pendulumCanvas {
       width: 100%;
       height: 100%;
       display: block;
       background: transparent;
     }
-    
+
     .output-section {
       margin-bottom: 1.5rem;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
-    
+
     @media (max-width: 900px) {
       .output-section {
         grid-template-columns: 1fr;
       }
     }
-    
+
     .output-column {
       background: var(--dark-bg);
       border: 1px solid var(--neon-purple);
@@ -171,7 +247,7 @@
       padding: 15px;
       box-shadow: 0 0 10px var(--neon-purple);
     }
-    
+
     #outputGrid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
@@ -179,7 +255,7 @@
       max-height: 300px;
       overflow-y: auto;
     }
-    
+
     .byte {
       font-family: monospace;
       text-align: center;
@@ -190,7 +266,7 @@
       text-shadow: 0 0 2px var(--neon-purple);
       font-size: 0.85rem;
     }
-    
+
     #heatmap {
       width: 100%;
       height: 300px;
@@ -202,14 +278,14 @@
       border-radius: 5px;
       padding: 5px;
     }
-    
+
     .heatmap-cell {
       background: #111;
       border-radius: 2px;
       transition: all 0.3s ease;
       position: relative;
     }
-    
+
     .heatmap-label {
       background: transparent;
       color: rgba(255, 255, 255, 0.7);
@@ -219,7 +295,7 @@
       justify-content: center;
       border: none;
     }
-    
+
     .instructions {
       position: absolute;
       bottom: 10px;
@@ -231,7 +307,7 @@
       border-radius: 4px;
       pointer-events: none;
     }
-    
+
     .mouse-force-indicator {
       position: absolute;
       top: 10px;
@@ -243,26 +319,26 @@
       border-radius: 4px;
       display: none;
     }
-    
+
     .stat-value {
       font-size: 1rem;
       color: var(--neon-blue);
       text-shadow: 0 0 5px var(--neon-blue);
       margin: 8px 0;
     }
-    
+
     .chart-container {
       height: 60px;
       position: relative;
     }
-    
+
     .chart-bar {
       height: 30px;
       border-radius: 3px;
       position: relative;
       transition: all 0.3s ease;
     }
-    
+
     .chart-text {
       position: absolute;
       top: 35px;
@@ -271,49 +347,130 @@
       font-size: 0.8rem;
       color: var(--neon-green);
     }
-    
-    /* Fire effect for heatmap */
+
     @keyframes fire-flicker {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.7; transform: scale(1.05); }
     }
-    
+
     .fire-hot {
       animation: fire-flicker 0.5s infinite alternate;
       box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
     }
-    
+
     .fire-warm {
       animation: fire-flicker 1s infinite alternate;
       box-shadow: 0 0 4px rgba(255, 204, 0, 0.4);
     }
-    
+
     .fire-medium {
       animation: fire-flicker 1.5s infinite alternate;
       box-shadow: 0 0 2px rgba(255, 102, 0, 0.3);
     }
-    
+
     .pendulum-trail {
       opacity: 0.6;
       stroke-width: 1;
     }
-    
-    /* Glow effects */
+
     .glow {
       filter: drop-shadow(0 0 3px currentColor);
+    }
+
+    /* Alert/Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--dark-bg);
+      border: 2px solid var(--neon-blue);
+      border-radius: 10px;
+      padding: 30px;
+      max-width: 500px;
+      box-shadow: 0 0 30px var(--neon-blue);
+    }
+
+    .modal.error {
+      border-color: var(--neon-red);
+      box-shadow: 0 0 30px var(--neon-red);
+    }
+
+    .modal h3 {
+      color: var(--neon-blue);
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+    }
+
+    .modal.error h3 {
+      color: var(--neon-red);
+    }
+
+    .modal p {
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Security Warning Banner -->
+    <div class="security-warning">
+      <div class="security-warning-title">⚠️ SECURITY WARNING - NOT FOR CRYPTOGRAPHIC USE ⚠️</div>
+      <div class="security-warning-text">
+        This is a DEMONSTRATION TOOL for educational purposes. DO NOT use for: cryptographic keys, passwords,
+        session tokens, security-sensitive applications, or any production security system.
+        Output is deterministic and observable. See documentation for details.
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-indicator status-healthy" id="healthStatus"></span>
+        <span id="healthText">System Healthy</span>
+      </div>
+      <div class="status-item">
+        <span>Pendulums: <span id="pendulumCount">0/8</span></span>
+      </div>
+      <div class="status-item">
+        <span>FPS: <span id="fpsDisplay">0</span></span>
+      </div>
+      <div class="status-item">
+        <span>Memory: <span id="memoryDisplay">N/A</span></span>
+      </div>
+      <div class="status-item">
+        <span>Samples: <span id="sampleCount">0</span></span>
+      </div>
+    </div>
+
     <header>
       <h1>🌀 Enhanced Chaotic Pendulum PRNG</h1>
       <div class="subtitle">
-        Advanced pseudo-random number generator using chaotic double pendulum motion arranged in a 2x4 grid.
-        Move your mouse near the pendulums to introduce entropy and influence their rapid chaotic motion.
+        Production-grade pseudo-random number generator using chaotic double pendulum motion.
+        Now with comprehensive security hardening, health monitoring, and fail-safe mechanisms.
       </div>
     </header>
-    
+
     <div class="dashboard">
       <div class="stat-box">
         <h2>System Entropy</h2>
@@ -334,21 +491,22 @@
         </div>
       </div>
     </div>
-    
+
     <div id="controls">
       <label>Seed: <input type="range" id="seedSlider" min="0" max="100" value="50" /></label>
       <label>Force: <input type="range" id="forceSlider" min="1" max="100" value="30" /></label>
       <label>Speed: <input type="range" id="speedSlider" min="1" max="10" value="5" /></label>
       <button id="resetBtn">🔄 Reset</button>
       <button id="exportBtn">📋 Export</button>
+      <button id="healthCheckBtn">🏥 Health Check</button>
     </div>
-    
+
     <div id="canvas-container">
       <svg id="pendulumCanvas"></svg>
-      <div class="instructions">Move mouse near pendulums for entropy • 2x4 grid layout</div>
+      <div class="instructions">Move mouse near pendulums for entropy • Production Build v2.0</div>
       <div class="mouse-force-indicator" id="forceIndicator">Force: 0</div>
     </div>
-    
+
     <div class="output-section">
       <div class="output-column">
         <h2>Generated Values (hex)</h2>
@@ -361,96 +519,620 @@
     </div>
   </div>
 
+  <!-- Modal for alerts -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <h3 id="modalTitle">Alert</h3>
+      <p id="modalMessage"></p>
+      <div class="modal-buttons">
+        <button id="modalClose">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    'use strict';
+
+    /**
+     * ⚠️ SECURITY WARNING ⚠️
+     * This PRNG is NOT cryptographically secure!
+     *
+     * DO NOT USE FOR:
+     * - Cryptographic keys or nonces
+     * - Session tokens or authentication
+     * - Password generation
+     * - Security-sensitive random numbers
+     * - Financial transactions
+     *
+     * This is a DEMONSTRATION of chaos-based PRNG with production-grade
+     * error handling, health monitoring, and fail-safe mechanisms.
+     *
+     * For cryptographic use, use crypto.getRandomValues() directly.
+     */
+
+    // ============================================================================
+    // CONSTANTS AND CONFIGURATION
+    // ============================================================================
+
+    const CONFIG = Object.freeze({
+      MAX_PENDULUMS: 8,
+      PENDULUM_GRID: { rows: 2, cols: 4 },
+      MAX_TRAIL_LENGTH: 20,
+      MAX_OUTPUT_SIZE: 2000,
+      MAX_TOTAL_SAMPLES: 100000,
+      SAMPLE_RATE: 8,
+      TARGET_FPS: 60,
+      HEALTH_CHECK_INTERVAL: 1000,
+      MAX_ERROR_COUNT: 100,
+      MAX_UNHEALTHY_PENDULUMS: 4,
+      MAX_MEMORY_MB: 500,
+      MIN_FPS: 30,
+      MAX_TIME_SINCE_BYTE: 5000,
+      SPEED_MIN: 1,
+      SPEED_MAX: 10,
+      FORCE_MIN: 1,
+      FORCE_MAX: 100,
+      SEED_MIN: 0,
+      SEED_MAX: 100,
+      BYTE_MIN: 0,
+      BYTE_MAX: 255,
+      VALUE_COUNT_SIZE: 256,
+      MAX_OMEGA: 10000,
+      PHYSICS_DT: 0.016,
+      SINGULARITY_EPSILON: 1e-10
+    });
+
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+
+    /**
+     * Secure random number generator using Web Crypto API
+     * Falls back to Math.random() ONLY if crypto is unavailable (with warning)
+     */
+    function secureRandom() {
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        const array = new Uint32Array(1);
+        crypto.getRandomValues(array);
+        return array[0] / 0x100000000;
+      } else {
+        console.error('SECURITY: crypto.getRandomValues() not available, falling back to Math.random()');
+        return Math.random();
+      }
+    }
+
+    /**
+     * Validate and clamp numeric value to range
+     */
+    function clamp(value, min, max) {
+      if (typeof value !== 'number' || !isFinite(value)) {
+        return min;
+      }
+      return Math.max(min, Math.min(max, value));
+    }
+
+    /**
+     * Validate integer in range
+     */
+    function validateInteger(value, min, max, defaultValue) {
+      const parsed = parseInt(value, 10);
+      if (!Number.isInteger(parsed) || !isFinite(parsed)) {
+        return defaultValue;
+      }
+      return clamp(parsed, min, max);
+    }
+
+    /**
+     * Normalize angle to [-π, π]
+     */
+    function normalizeAngle(theta) {
+      const normalized = ((theta + Math.PI) % (2 * Math.PI)) - Math.PI;
+      return isFinite(normalized) ? normalized : 0;
+    }
+
+    /**
+     * Safe color calculation with validation
+     */
+    function calculateSafeColor(intensity) {
+      if (typeof intensity !== 'number' || !isFinite(intensity)) {
+        return 'rgb(17, 17, 17)';
+      }
+
+      intensity = clamp(intensity, 0, 1);
+
+      let r, g, b;
+      if (intensity < 0.2) {
+        const t = intensity * 5;
+        r = Math.floor(51 + 153 * t);
+        g = 0;
+        b = 0;
+      } else if (intensity < 0.5) {
+        const t = (intensity - 0.2) * 3.33;
+        r = Math.floor(204 + 51 * t);
+        g = Math.floor(102 * t);
+        b = 0;
+      } else if (intensity < 0.8) {
+        const t = (intensity - 0.5) * 3.33;
+        r = 255;
+        g = Math.floor(102 + 102 * t);
+        b = 0;
+      } else {
+        const t = (intensity - 0.8) * 5;
+        r = 255;
+        g = Math.floor(204 + 51 * t);
+        b = Math.floor(255 * t);
+      }
+
+      r = clamp(Math.floor(r), 0, 255);
+      g = clamp(Math.floor(g), 0, 255);
+      b = clamp(Math.floor(b), 0, 255);
+
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    /**
+     * Calculate Shannon entropy
+     */
+    function calculateEntropy(data) {
+      if (!Array.isArray(data) || data.length < 2) return 0;
+
+      try {
+        const freq = {};
+        data.forEach(b => {
+          if (typeof b === 'number' && Number.isInteger(b)) {
+            freq[b] = (freq[b] || 0) + 1;
+          }
+        });
+
+        const total = data.length;
+        return Object.values(freq)
+          .map(f => f / total)
+          .filter(p => p > 0)
+          .reduce((acc, p) => acc - p * Math.log2(p), 0);
+      } catch (error) {
+        console.error('Entropy calculation error:', error);
+        return 0;
+      }
+    }
+
+    // ============================================================================
+    // MODAL/ALERT SYSTEM
+    // ============================================================================
+
+    const Modal = {
+      show(title, message, isError = false) {
+        const overlay = document.getElementById('modalOverlay');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+
+        if (isError) {
+          modal.classList.add('error');
+        } else {
+          modal.classList.remove('error');
+        }
+
+        overlay.classList.add('active');
+      },
+
+      hide() {
+        const overlay = document.getElementById('modalOverlay');
+        overlay.classList.remove('active');
+      }
+    };
+
+    document.getElementById('modalClose').addEventListener('click', () => Modal.hide());
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'modalOverlay') Modal.hide();
+    });
+
+    // ============================================================================
+    // HEALTH MONITORING SYSTEM
+    // ============================================================================
+
+    class HealthMonitor {
+      constructor() {
+        this.metrics = {
+          lastByteTime: Date.now(),
+          bytesPerSecond: 0,
+          frameRate: 0,
+          errorCount: 0,
+          memoryUsage: 0,
+          unhealthyPendulums: 0,
+          frameCount: 0
+        };
+
+        this.isHealthy = true;
+        this.lastFrameTime = performance.now();
+        this.lastHealthCheck = Date.now();
+        this.frameTimeSamples = [];
+      }
+
+      recordByte() {
+        this.metrics.lastByteTime = Date.now();
+        this.metrics.frameCount++;
+      }
+
+      recordError(error) {
+        this.metrics.errorCount++;
+        console.error('Application error:', error);
+
+        if (this.metrics.errorCount > CONFIG.MAX_ERROR_COUNT) {
+          this.triggerCircuitBreaker('Too many errors (>100)');
+        }
+      }
+
+      recordFrame(timestamp) {
+        if (this.lastFrameTime > 0) {
+          const delta = timestamp - this.lastFrameTime;
+          this.frameTimeSamples.push(delta);
+
+          if (this.frameTimeSamples.length > 60) {
+            this.frameTimeSamples.shift();
+          }
+
+          const avgDelta = this.frameTimeSamples.reduce((a, b) => a + b, 0) / this.frameTimeSamples.length;
+          this.metrics.frameRate = avgDelta > 0 ? 1000 / avgDelta : 0;
+        }
+        this.lastFrameTime = timestamp;
+      }
+
+      checkHealth(prng) {
+        const now = Date.now();
+
+        // Don't check too frequently
+        if (now - this.lastHealthCheck < CONFIG.HEALTH_CHECK_INTERVAL) {
+          return this.isHealthy;
+        }
+        this.lastHealthCheck = now;
+
+        // Check byte generation
+        const timeSinceLastByte = now - this.metrics.lastByteTime;
+        if (timeSinceLastByte > CONFIG.MAX_TIME_SINCE_BYTE) {
+          this.triggerCircuitBreaker(`No bytes generated in ${CONFIG.MAX_TIME_SINCE_BYTE/1000}s`);
+          return false;
+        }
+
+        // Check frame rate
+        if (this.metrics.frameRate < CONFIG.MIN_FPS && this.metrics.frameRate > 0) {
+          console.warn(`Low FPS: ${this.metrics.frameRate.toFixed(1)}`);
+        }
+
+        // Check memory if available
+        if (performance.memory) {
+          const memoryMB = performance.memory.usedJSHeapSize / 1024 / 1024;
+          this.metrics.memoryUsage = memoryMB;
+
+          if (memoryMB > CONFIG.MAX_MEMORY_MB) {
+            this.triggerCircuitBreaker(`High memory usage: ${memoryMB.toFixed(0)} MB`);
+            return false;
+          }
+        }
+
+        // Check pendulum health
+        if (prng) {
+          const unhealthy = prng.pendulums.filter(p => !p.isHealthy).length;
+          this.metrics.unhealthyPendulums = unhealthy;
+
+          if (unhealthy > CONFIG.MAX_UNHEALTHY_PENDULUMS) {
+            this.triggerCircuitBreaker(`Too many unhealthy pendulums: ${unhealthy}/8`);
+            return false;
+          }
+        }
+
+        this.isHealthy = true;
+        return true;
+      }
+
+      triggerCircuitBreaker(reason) {
+        if (!this.isHealthy) return;
+
+        this.isHealthy = false;
+        console.error(`CIRCUIT BREAKER TRIGGERED: ${reason}`);
+
+        AppState.stopAnimation();
+        Modal.show('System Error', `Circuit breaker triggered: ${reason}\n\nThe application will attempt automatic recovery.`, true);
+
+        setTimeout(() => this.attemptRecovery(), 2000);
+      }
+
+      attemptRecovery() {
+        console.log('Attempting automatic recovery...');
+
+        try {
+          this.metrics.errorCount = 0;
+          this.metrics.lastByteTime = Date.now();
+          this.isHealthy = true;
+
+          AppState.reset();
+          console.log('Recovery successful');
+          Modal.show('Recovery Successful', 'Application has been reset and recovered successfully.');
+
+        } catch (error) {
+          console.error('Recovery failed:', error);
+          Modal.show('Recovery Failed', 'Automatic recovery failed. Please refresh the page.', true);
+        }
+      }
+
+      getStatus() {
+        return {
+          healthy: this.isHealthy,
+          metrics: { ...this.metrics }
+        };
+      }
+
+      updateDisplay() {
+        const healthStatus = document.getElementById('healthStatus');
+        const healthText = document.getElementById('healthText');
+        const fpsDisplay = document.getElementById('fpsDisplay');
+        const memoryDisplay = document.getElementById('memoryDisplay');
+
+        if (this.isHealthy) {
+          healthStatus.className = 'status-indicator status-healthy';
+          healthText.textContent = 'System Healthy';
+        } else {
+          healthStatus.className = 'status-indicator status-critical';
+          healthText.textContent = 'System Critical';
+        }
+
+        fpsDisplay.textContent = this.metrics.frameRate.toFixed(1);
+
+        if (this.metrics.memoryUsage > 0) {
+          memoryDisplay.textContent = `${this.metrics.memoryUsage.toFixed(0)} MB`;
+        }
+      }
+    }
+
+    // ============================================================================
+    // VALIDATED SLIDER CLASS
+    // ============================================================================
+
+    class ValidatedSlider {
+      constructor(id, min, max, defaultValue, onChange) {
+        this.element = document.getElementById(id);
+        if (!this.element) {
+          throw new Error(`Slider element not found: ${id}`);
+        }
+
+        this.min = min;
+        this.max = max;
+        this.defaultValue = defaultValue;
+        this.onChange = onChange;
+        this.currentValue = defaultValue;
+
+        this.boundHandler = this.handleInput.bind(this);
+        this.element.addEventListener('input', this.boundHandler);
+      }
+
+      handleInput(e) {
+        let value = parseFloat(e.target.value);
+
+        if (!isFinite(value)) {
+          value = this.defaultValue;
+        }
+
+        value = clamp(value, this.min, this.max);
+
+        if (Number.isInteger(this.min) && Number.isInteger(this.max)) {
+          value = Math.round(value);
+        }
+
+        this.element.value = value;
+        this.currentValue = value;
+
+        if (this.onChange) {
+          this.onChange(value);
+        }
+      }
+
+      getValue() {
+        return this.currentValue;
+      }
+
+      setValue(value) {
+        value = clamp(value, this.min, this.max);
+        this.element.value = value;
+        this.currentValue = value;
+      }
+
+      destroy() {
+        this.element.removeEventListener('input', this.boundHandler);
+      }
+    }
+
+    // ============================================================================
+    // CHAOTIC PENDULUM CLASS
+    // ============================================================================
+
     class ChaoticPendulum {
       constructor(seedOffset, xOrigin, yOrigin) {
+        // Use secure random for initial conditions
         this.theta1 = Math.PI / 2 + seedOffset * 0.02;
         this.theta2 = Math.PI / 2 - seedOffset * 0.02;
-        this.omega1 = (Math.random() - 0.5) * 2;
-        this.omega2 = (Math.random() - 0.5) * 2;
+        this.omega1 = (secureRandom() - 0.5) * 2;
+        this.omega2 = (secureRandom() - 0.5) * 2;
+
         this.length1 = 80;
         this.length2 = 80;
         this.mass1 = 1;
         this.mass2 = 1;
-        this.g = 15; // Increased gravity for faster motion
+        this.g = 15;
+
         this.origin = { x: xOrigin, y: yOrigin };
         this.externalForce = { x: 0, y: 0 };
-        this.damping = 0.9995; // Very light damping
-        this.trail = [];
-        this.maxTrailLength = 20;
+        this.damping = 0.9995;
+
+        // Fixed-size circular buffer for trail
+        this.trail = new Array(CONFIG.MAX_TRAIL_LENGTH);
+        this.trailIndex = 0;
+        this.trailFilled = false;
+
+        this.failureCount = 0;
+        this.maxFailures = 10;
+        this.isHealthy = true;
       }
 
       applyExternalForce(forceX, forceY) {
-        this.externalForce.x = forceX * 0.5;
-        this.externalForce.y = forceY * 0.5;
+        // Validate and clamp forces
+        if (!isFinite(forceX) || !isFinite(forceY)) return;
+
+        this.externalForce.x = clamp(forceX * 0.5, -1000, 1000);
+        this.externalForce.y = clamp(forceY * 0.5, -1000, 1000);
+      }
+
+      validateState() {
+        const values = [
+          this.theta1, this.theta2,
+          this.omega1, this.omega2,
+          this.length1, this.length2,
+          this.mass1, this.mass2
+        ];
+
+        return values.every(v => isFinite(v) && !isNaN(v));
+      }
+
+      handleFailure(reason) {
+        console.error(`Pendulum failure: ${reason}`, {
+          theta1: this.theta1,
+          theta2: this.theta2,
+          omega1: this.omega1,
+          omega2: this.omega2
+        });
+
+        this.failureCount++;
+
+        if (this.failureCount >= this.maxFailures) {
+          this.isHealthy = false;
+          console.error('Pendulum marked unhealthy after repeated failures');
+          return;
+        }
+
+        this.resetToSafeState();
+      }
+
+      resetToSafeState() {
+        console.warn('Resetting pendulum to safe state');
+        this.theta1 = Math.PI / 2 + (secureRandom() - 0.5) * 0.1;
+        this.theta2 = Math.PI / 2 + (secureRandom() - 0.5) * 0.1;
+        this.omega1 = (secureRandom() - 0.5) * 2;
+        this.omega2 = (secureRandom() - 0.5) * 2;
       }
 
       step(dt) {
-        // Apply external force
-        const forceMagnitude = Math.sqrt(this.externalForce.x * this.externalForce.x + 
-                                        this.externalForce.y * this.externalForce.y);
-        
-        if (forceMagnitude > 0) {
-          const torque1 = -this.length1 * (this.externalForce.x * Math.cos(this.theta1) - 
-                                          this.externalForce.y * Math.sin(this.theta1));
-          const torque2 = -this.length2 * (this.externalForce.x * Math.cos(this.theta2) - 
-                                          this.externalForce.y * Math.sin(this.theta2));
-          
-          this.omega1 += torque1 * dt * 2 / (this.mass1 * this.length1 * this.length1);
-          this.omega2 += torque2 * dt * 2 / (this.mass2 * this.length2 * this.length2);
-          
-          this.externalForce.x = 0;
-          this.externalForce.y = 0;
+        if (!this.validateState()) {
+          this.handleFailure('Invalid state before step');
+          return;
         }
-        
-        // Enhanced double pendulum physics
-        const dtheta1 = this.omega1;
-        const dtheta2 = this.omega2;
-        
-        const cosDelta = Math.cos(this.theta2 - this.theta1);
-        const sinDelta = Math.sin(this.theta2 - this.theta1);
-        
-        const denom1 = (this.mass1 + this.mass2) * this.length1 - 
-                      this.mass2 * this.length1 * cosDelta * cosDelta;
-        const denom2 = (this.mass1 + this.mass2) * this.length2 - 
-                      this.mass2 * this.length2 * cosDelta * cosDelta;
-        
-        const domega1 = (
-          -this.g * (this.mass1 + this.mass2) * Math.sin(this.theta1) -
-          this.mass2 * this.g * Math.sin(this.theta1 - 2 * this.theta2) -
-          2 * sinDelta * this.mass2 * (
-            this.omega2 * this.omega2 * this.length2 +
-            this.omega1 * this.omega1 * this.length1 * cosDelta
-          )
-        ) / (this.length1 * denom1);
-        
-        const domega2 = (
-          2 * sinDelta * (
-            this.omega1 * this.omega1 * this.length1 * (this.mass1 + this.mass2) +
-            this.g * (this.mass1 + this.mass2) * Math.cos(this.theta1) +
-            this.omega2 * this.omega2 * this.length2 * this.mass2 * cosDelta
-          )
-        ) / (this.length2 * denom2);
-        
-        // Add some chaos
-        const chaos = 0.01;
-        this.omega1 += (Math.random() - 0.5) * chaos;
-        this.omega2 += (Math.random() - 0.5) * chaos;
-        
-        this.theta1 += dtheta1 * dt;
-        this.omega1 += domega1 * dt;
-        this.theta2 += dtheta2 * dt;
-        this.omega2 += domega2 * dt;
-        
-        // Apply damping
-        this.omega1 *= this.damping;
-        this.omega2 *= this.damping;
-        
-        // Update trail
-        const pos = this.getTipPosition();
-        this.trail.push({ x: pos.x2, y: pos.y2 });
-        if (this.trail.length > this.maxTrailLength) {
-          this.trail.shift();
+
+        try {
+          // Apply external force
+          const forceMagnitude = Math.sqrt(
+            this.externalForce.x * this.externalForce.x +
+            this.externalForce.y * this.externalForce.y
+          );
+
+          if (forceMagnitude > 0 && isFinite(forceMagnitude)) {
+            const torque1 = -this.length1 * (
+              this.externalForce.x * Math.cos(this.theta1) -
+              this.externalForce.y * Math.sin(this.theta1)
+            );
+            const torque2 = -this.length2 * (
+              this.externalForce.x * Math.cos(this.theta2) -
+              this.externalForce.y * Math.sin(this.theta2)
+            );
+
+            if (isFinite(torque1) && isFinite(torque2)) {
+              this.omega1 += torque1 * dt * 2 / (this.mass1 * this.length1 * this.length1);
+              this.omega2 += torque2 * dt * 2 / (this.mass2 * this.length2 * this.length2);
+            }
+
+            this.externalForce.x = 0;
+            this.externalForce.y = 0;
+          }
+
+          // Double pendulum physics
+          const dtheta1 = this.omega1;
+          const dtheta2 = this.omega2;
+
+          const cosDelta = Math.cos(this.theta2 - this.theta1);
+          const sinDelta = Math.sin(this.theta2 - this.theta1);
+
+          const denom1 = (this.mass1 + this.mass2) * this.length1 -
+                        this.mass2 * this.length1 * cosDelta * cosDelta;
+          const denom2 = (this.mass1 + this.mass2) * this.length2 -
+                        this.mass2 * this.length2 * cosDelta * cosDelta;
+
+          // Check for singularity
+          if (Math.abs(denom1) < CONFIG.SINGULARITY_EPSILON ||
+              Math.abs(denom2) < CONFIG.SINGULARITY_EPSILON) {
+            throw new Error('Singularity detected in denominator');
+          }
+
+          const domega1 = (
+            -this.g * (this.mass1 + this.mass2) * Math.sin(this.theta1) -
+            this.mass2 * this.g * Math.sin(this.theta1 - 2 * this.theta2) -
+            2 * sinDelta * this.mass2 * (
+              this.omega2 * this.omega2 * this.length2 +
+              this.omega1 * this.omega1 * this.length1 * cosDelta
+            )
+          ) / (this.length1 * denom1);
+
+          const domega2 = (
+            2 * sinDelta * (
+              this.omega1 * this.omega1 * this.length1 * (this.mass1 + this.mass2) +
+              this.g * (this.mass1 + this.mass2) * Math.cos(this.theta1) +
+              this.omega2 * this.omega2 * this.length2 * this.mass2 * cosDelta
+            )
+          ) / (this.length2 * denom2);
+
+          // Validate accelerations
+          if (!isFinite(domega1) || !isFinite(domega2)) {
+            throw new Error('Non-finite angular acceleration');
+          }
+
+          // Add controlled chaos using secure random
+          const chaos = 0.01;
+          this.omega1 += (secureRandom() - 0.5) * chaos;
+          this.omega2 += (secureRandom() - 0.5) * chaos;
+
+          // Update state
+          this.theta1 += dtheta1 * dt;
+          this.omega1 += domega1 * dt;
+          this.theta2 += dtheta2 * dt;
+          this.omega2 += domega2 * dt;
+
+          // Normalize angles to prevent overflow
+          this.theta1 = normalizeAngle(this.theta1);
+          this.theta2 = normalizeAngle(this.theta2);
+
+          // Clamp velocities to prevent explosion
+          this.omega1 = clamp(this.omega1, -CONFIG.MAX_OMEGA, CONFIG.MAX_OMEGA);
+          this.omega2 = clamp(this.omega2, -CONFIG.MAX_OMEGA, CONFIG.MAX_OMEGA);
+
+          // Apply damping
+          this.omega1 *= this.damping;
+          this.omega2 *= this.damping;
+
+          // Validate state after update
+          if (!this.validateState()) {
+            throw new Error('State became invalid after step');
+          }
+
+          // Update trail (circular buffer)
+          const pos = this.getTipPosition();
+          this.trail[this.trailIndex] = { x: pos.x2, y: pos.y2 };
+          this.trailIndex = (this.trailIndex + 1) % CONFIG.MAX_TRAIL_LENGTH;
+          if (this.trailIndex === 0) this.trailFilled = true;
+
+          // Reset failure count on success
+          this.failureCount = 0;
+          this.isHealthy = true;
+
+        } catch (error) {
+          this.handleFailure(error.message);
         }
       }
 
@@ -462,40 +1144,82 @@
         return { x1, y1, x2, y2 };
       }
 
-      extractBit() {
-        try {
-          const { x2, y2 } = this.getTipPosition();
-          const combined = Math.abs(x2 * 1000 + y2 * 1000 + this.omega1 * 10000 + this.omega2 * 10000);
-          const str = combined.toFixed(10).replace('.', '');
-          const digit = parseInt(str[str.length - 1] || '0');
-          return digit % 2;
-        } catch (error) {
-          return Math.random() > 0.5 ? 1 : 0;
+      getTrail() {
+        if (!this.trailFilled) {
+          return this.trail.slice(0, this.trailIndex).filter(p => p !== undefined);
         }
+
+        return [
+          ...this.trail.slice(this.trailIndex),
+          ...this.trail.slice(0, this.trailIndex)
+        ].filter(p => p !== undefined);
+      }
+
+      extractBit() {
+        if (!this.isHealthy) {
+          throw new Error('Pendulum unhealthy, cannot extract bit');
+        }
+
+        if (!this.validateState()) {
+          throw new Error('Invalid pendulum state');
+        }
+
+        const { x2, y2 } = this.getTipPosition();
+
+        if (!isFinite(x2) || !isFinite(y2)) {
+          throw new Error('Non-finite pendulum position');
+        }
+
+        // Use modulo arithmetic to keep values bounded and prevent overflow
+        const x2_mod = ((Math.abs(x2) % 1000) + 1000) % 1000;
+        const y2_mod = ((Math.abs(y2) % 1000) + 1000) % 1000;
+        const omega1_clamped = clamp(this.omega1, -CONFIG.MAX_OMEGA, CONFIG.MAX_OMEGA);
+        const omega2_clamped = clamp(this.omega2, -CONFIG.MAX_OMEGA, CONFIG.MAX_OMEGA);
+        const omega1_mod = ((Math.abs(omega1_clamped) % 1000) + 1000) % 1000;
+        const omega2_mod = ((Math.abs(omega2_clamped) % 1000) + 1000) % 1000;
+
+        // Combine sources with prime multipliers to reduce correlation
+        const combined = (x2_mod * 1.1 + y2_mod * 1.3 +
+                         omega1_mod * 1.7 + omega2_mod * 1.9) % 10000;
+
+        // Extract bit using bitwise AND
+        const asInt = Math.floor(Math.abs(combined)) & 0xFFFFFFFF;
+        return asInt & 1;
       }
     }
+
+    // ============================================================================
+    // CHAOTIC PRNG CLASS
+    // ============================================================================
 
     class ChaoticPRNG {
       constructor(seedOffset = 50) {
         this.pendulums = [];
         this.seedOffset = seedOffset;
         this.sampleCounter = 0;
-        this.sampleRate = 8; // Slower sampling
+        this.sampleRate = CONFIG.SAMPLE_RATE;
         this.initializePendulums();
       }
 
       initializePendulums() {
         try {
           const container = document.getElementById('canvas-container');
-          const containerWidth = container.clientWidth;
-          const containerHeight = container.clientHeight;
-          
-          // 2x4 grid layout
-          const cols = 4;
-          const rows = 2;
+          if (!container) {
+            throw new Error('Canvas container not found');
+          }
+
+          const containerWidth = Math.max(400, container.clientWidth);
+          const containerHeight = Math.max(300, container.clientHeight);
+
+          if (containerWidth === 0 || containerHeight === 0) {
+            console.warn('Container has zero size, deferring initialization');
+            return;
+          }
+
+          const { rows, cols } = CONFIG.PENDULUM_GRID;
           const spacingX = containerWidth / (cols + 1);
           const spacingY = containerHeight / (rows + 1);
-          
+
           this.pendulums = [];
           for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
@@ -509,7 +1233,21 @@
           }
         } catch (error) {
           console.error("Error initializing pendulums:", error);
+          throw error;
         }
+      }
+
+      updatePendulumOrigins(width, height) {
+        const { rows, cols } = CONFIG.PENDULUM_GRID;
+        const spacingX = width / (cols + 1);
+        const spacingY = height / (rows + 1);
+
+        this.pendulums.forEach((p, i) => {
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          p.origin.x = spacingX * (col + 1);
+          p.origin.y = spacingY * (row + 1);
+        });
       }
 
       stepAll(dt) {
@@ -518,104 +1256,199 @@
 
       generateByte() {
         try {
-          // Only generate byte at reduced sample rate
           this.sampleCounter++;
           if (this.sampleCounter < this.sampleRate) {
             return null;
           }
           this.sampleCounter = 0;
-          
-          const bits = this.pendulums.map(p => p.extractBit());
-          return parseInt(bits.join(''), 2);
+
+          const bits = [];
+          let failedCount = 0;
+
+          // Try to extract bit from each pendulum
+          for (let i = 0; i < this.pendulums.length; i++) {
+            try {
+              bits.push(this.pendulums[i].extractBit());
+            } catch (error) {
+              console.warn(`Pendulum ${i} failed to extract bit:`, error);
+              failedCount++;
+
+              // Use backup: secure random
+              const arr = new Uint8Array(1);
+              crypto.getRandomValues(arr);
+              bits.push(arr[0] & 1);
+            }
+          }
+
+          if (failedCount > CONFIG.MAX_UNHEALTHY_PENDULUMS) {
+            console.error(`${failedCount}/${CONFIG.MAX_PENDULUMS} pendulums failed`);
+          }
+
+          if (bits.length !== CONFIG.MAX_PENDULUMS) {
+            throw new Error(`Invalid bit count: ${bits.length}`);
+          }
+
+          const byte = parseInt(bits.join(''), 2);
+
+          // Validate output
+          if (!Number.isInteger(byte) || byte < CONFIG.BYTE_MIN || byte > CONFIG.BYTE_MAX) {
+            throw new Error(`Invalid byte generated: ${byte}`);
+          }
+
+          return byte;
+
         } catch (error) {
           console.error("Error generating byte:", error);
-          return Math.floor(Math.random() * 256);
+          throw error;
         }
       }
 
       getPendulumPositions() {
         return this.pendulums.map(p => ({
           ...p.getTipPosition(),
-          trail: [...p.trail]
+          trail: p.getTrail()
         }));
       }
 
       updateSeedOffset(offset) {
+        offset = validateInteger(offset, CONFIG.SEED_MIN, CONFIG.SEED_MAX, 50);
         this.seedOffset = offset;
+
         this.pendulums.forEach((p, i) => {
           p.theta1 = Math.PI / 2 + (i + offset * 0.1) * 0.02;
           p.theta2 = Math.PI / 2 - (i + offset * 0.1) * 0.02;
-          p.omega1 = (Math.random() - 0.5) * 2;
-          p.omega2 = (Math.random() - 0.5) * 2;
+          p.omega1 = (secureRandom() - 0.5) * 2;
+          p.omega2 = (secureRandom() - 0.5) * 2;
+          p.failureCount = 0;
+          p.isHealthy = true;
         });
       }
 
       applyMouseForce(mouseX, mouseY, forceFactor) {
+        forceFactor = clamp(forceFactor, 0, 100);
         let maxForce = 0;
+
         this.pendulums.forEach(pendulum => {
           const pos = pendulum.getTipPosition();
           const dx = mouseX - pos.x2;
           const dy = mouseY - pos.y2;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < 200) {
+
+          if (distance < 200 && distance > 0) {
             const force = forceFactor * (1 - distance / 200);
             maxForce = Math.max(maxForce, force);
-            const forceX = (dx / (distance || 1)) * force;
-            const forceY = (dy / (distance || 1)) * force;
+            const forceX = (dx / distance) * force;
+            const forceY = (dy / distance) * force;
             pendulum.applyExternalForce(forceX, forceY);
           }
         });
-        
-        if (maxForce > 0) {
-          document.getElementById('forceIndicator').style.display = 'block';
-          document.getElementById('forceIndicator').textContent = `Force: ${maxForce.toFixed(2)}`;
+
+        const forceIndicator = document.getElementById('forceIndicator');
+        if (maxForce > 0 && forceIndicator) {
+          forceIndicator.style.display = 'block';
+          forceIndicator.textContent = `Force: ${maxForce.toFixed(2)}`;
         }
       }
-    }
 
-    // Application state
-    let prng;
-    const outputList = [];
-    const valueCounts = new Array(256).fill(0);
-    let svg;
-    let animationFrameId;
-    let speedMultiplier = 1;
-
-    function initApplication() {
-      try {
-        const seedOffset = parseInt(document.getElementById("seedSlider").value);
-        prng = new ChaoticPRNG(seedOffset);
-        
-        const container = document.getElementById("canvas-container");
-        svg = document.getElementById("pendulumCanvas");
-        svg.setAttribute("width", container.clientWidth);
-        svg.setAttribute("height", container.clientHeight);
-        
-        initHeatmap();
-        setupEventListeners();
-        
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        update();
-        
-        console.log("Application initialized successfully!");
-      } catch (error) {
-        console.error("Error initializing application:", error);
+      destroy() {
+        this.pendulums = [];
       }
     }
+
+    // ============================================================================
+    // APPLICATION STATE
+    // ============================================================================
+
+    const AppState = {
+      prng: null,
+      animationFrameId: null,
+      isRunning: false,
+      updateLock: false,
+      initializationLock: false,
+      resizePending: false,
+      resizeTimeout: null,
+
+      outputList: [],
+      valueCounts: new Array(CONFIG.VALUE_COUNT_SIZE).fill(0),
+      valueCountsSnapshot: new Array(CONFIG.VALUE_COUNT_SIZE).fill(0),
+      snapshotDirty: false,
+
+      totalSamplesGenerated: 0,
+
+      svg: null,
+      healthMonitor: null,
+
+      sliders: {
+        seed: null,
+        force: null,
+        speed: null
+      },
+
+      eventHandlers: new Map(),
+
+      startAnimation() {
+        if (this.isRunning) return;
+        this.isRunning = true;
+        this.updateLock = false;
+        update();
+      },
+
+      stopAnimation() {
+        if (this.animationFrameId) {
+          cancelAnimationFrame(this.animationFrameId);
+          this.animationFrameId = null;
+        }
+        this.isRunning = false;
+      },
+
+      reset() {
+        this.stopAnimation();
+
+        this.outputList.length = 0;
+        this.valueCounts.fill(0);
+        this.valueCountsSnapshot.fill(0);
+        this.snapshotDirty = false;
+        this.totalSamplesGenerated = 0;
+
+        if (this.prng) {
+          this.prng.destroy();
+        }
+
+        const seedValue = this.sliders.seed ? this.sliders.seed.getValue() : 50;
+        this.prng = new ChaoticPRNG(seedValue);
+
+        if (this.healthMonitor) {
+          this.healthMonitor.metrics.errorCount = 0;
+          this.healthMonitor.metrics.lastByteTime = Date.now();
+          this.healthMonitor.isHealthy = true;
+        }
+
+        renderOutput();
+        updateHeatmap();
+        updateStats();
+
+        this.startAnimation();
+      }
+    };
+
+    // ============================================================================
+    // RENDERING FUNCTIONS
+    // ============================================================================
 
     function initHeatmap() {
       const heatmapDiv = document.getElementById("heatmap");
-      heatmapDiv.innerHTML = '';
-      
-      // Create 17x17 grid (16x16 for values + 1 row/col for labels)
-      const gridSize = 16;
-      
+      if (!heatmapDiv) return;
+
+      // Clear existing content
+      while (heatmapDiv.firstChild) {
+        heatmapDiv.removeChild(heatmapDiv.firstChild);
+      }
+
       // Add empty corner cell
       const corner = document.createElement('div');
       corner.className = 'heatmap-label';
       heatmapDiv.appendChild(corner);
-      
+
       // Column labels
       for (let i = 0; i < 16; i++) {
         const label = document.createElement('div');
@@ -623,16 +1456,14 @@
         label.textContent = i.toString(16).toUpperCase();
         heatmapDiv.appendChild(label);
       }
-      
+
       // Rows with row labels and data cells
       for (let row = 0; row < 16; row++) {
-        // Row label
         const label = document.createElement('div');
         label.className = 'heatmap-label';
         label.textContent = row.toString(16).toUpperCase();
         heatmapDiv.appendChild(label);
-        
-        // Data cells
+
         for (let col = 0; col < 16; col++) {
           const cell = document.createElement('div');
           cell.className = 'heatmap-cell';
@@ -645,172 +1476,122 @@
     }
 
     function updateHeatmap() {
-      const maxCount = Math.max(...valueCounts, 1);
-      
-      for (let i = 0; i < 256; i++) {
+      // Use snapshot to avoid race conditions
+      const counts = AppState.valueCountsSnapshot;
+
+      if (!Array.isArray(counts) || counts.length !== CONFIG.VALUE_COUNT_SIZE) {
+        console.error('Invalid counts array');
+        return;
+      }
+
+      const validCounts = counts.map(c => {
+        if (typeof c !== 'number' || !isFinite(c) || c < 0) {
+          return 0;
+        }
+        return Math.floor(c);
+      });
+
+      const maxCount = Math.max(...validCounts, 1);
+
+      for (let i = 0; i < CONFIG.VALUE_COUNT_SIZE; i++) {
         const cell = document.getElementById(`cell-${i}`);
-        if (cell) {
-          const count = valueCounts[i];
-          const intensity = count / maxCount;
-          
-          // Remove existing fire classes
-          cell.classList.remove('fire-hot', 'fire-warm', 'fire-medium');
-          
-          if (intensity === 0) {
-            cell.style.backgroundColor = '#111';
-          } else {
-            // Fire-like color progression
-            let color;
-            if (intensity < 0.2) {
-              const t = intensity * 5;
-              color = `rgb(${Math.floor(51 + 153 * t)}, 0, 0)`;
-            } else if (intensity < 0.5) {
-              const t = (intensity - 0.2) * 3.33;
-              color = `rgb(${Math.floor(204 + 51 * t)}, ${Math.floor(102 * t)}, 0)`;
-            } else if (intensity < 0.8) {
-              const t = (intensity - 0.5) * 3.33;
-              color = `rgb(255, ${Math.floor(102 + 102 * t)}, 0)`;
-            } else {
-              const t = (intensity - 0.8) * 5;
-              color = `rgb(255, ${Math.floor(204 + 51 * t)}, ${Math.floor(255 * t)})`;
-            }
-            
-            cell.style.backgroundColor = color;
-            
-            // Add fire animation classes
-            if (intensity > 0.8) {
-              cell.classList.add('fire-hot');
-            } else if (intensity > 0.5) {
-              cell.classList.add('fire-warm');
-            } else if (intensity > 0.2) {
-              cell.classList.add('fire-medium');
-            }
-          }
-          
-          cell.setAttribute('data-count', count);
+        if (!cell) continue;
+
+        const count = validCounts[i];
+        let intensity = count / maxCount;
+        intensity = clamp(intensity, 0, 1);
+
+        if (!isFinite(intensity)) {
+          intensity = 0;
         }
+
+        // Remove existing fire classes
+        cell.classList.remove('fire-hot', 'fire-warm', 'fire-medium');
+
+        if (intensity === 0) {
+          cell.style.backgroundColor = '#111';
+        } else {
+          const color = calculateSafeColor(intensity);
+          cell.style.backgroundColor = color;
+
+          if (intensity > 0.8) {
+            cell.classList.add('fire-hot');
+          } else if (intensity > 0.5) {
+            cell.classList.add('fire-warm');
+          } else if (intensity > 0.2) {
+            cell.classList.add('fire-medium');
+          }
+        }
+
+        cell.setAttribute('data-count', count);
       }
     }
 
-    function setupEventListeners() {
-      document.getElementById("seedSlider").addEventListener("input", e => {
-        prng.updateSeedOffset(+e.target.value);
-      });
-      
-      document.getElementById("speedSlider").addEventListener("input", e => {
-        speedMultiplier = parseInt(e.target.value);
-      });
-      
-      document.getElementById("resetBtn").addEventListener("click", () => {
-        outputList.length = 0;
-        valueCounts.fill(0);
-        renderOutput();
-        updateHeatmap();
-        updateStats();
-        prng.updateSeedOffset(parseInt(document.getElementById("seedSlider").value));
-      });
-      
-      document.getElementById("exportBtn").addEventListener("click", () => {
-        try {
-          const blob = new Blob([outputList.join('\n')], { type: 'text/plain' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "enhanced_prng_output.txt";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        } catch (error) {
-          console.error("Error exporting data:", error);
-        }
-      });
-      
-      document.getElementById("canvas-container").addEventListener("mousemove", e => {
-        const rect = e.target.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        const forceFactor = parseInt(document.getElementById("forceSlider").value) / 5;
-        prng.applyMouseForce(mouseX, mouseY, forceFactor);
-      });
-      
-      document.getElementById("canvas-container").addEventListener("mouseleave", () => {
-        document.getElementById('forceIndicator').style.display = 'none';
-      });
-      
-      window.addEventListener("resize", () => {
-        const container = document.getElementById("canvas-container");
-        svg.setAttribute("width", container.clientWidth);
-        svg.setAttribute("height", container.clientHeight);
-        prng.initializePendulums();
-      });
-    }
+    function renderOutput() {
+      const outputGrid = document.getElementById("outputGrid");
+      if (!outputGrid) return;
 
-    function update() {
-      try {
-        // Step pendulums at higher speed
-        for (let i = 0; i < speedMultiplier; i++) {
-          prng.stepAll(0.016); // ~60fps base rate
-        }
-        
-        // Generate byte at controlled rate
-        const byte = prng.generateByte();
-        if (byte !== null) {
-          outputList.push(byte);
-          valueCounts[byte]++;
-          
-          if (outputList.length > 2000) {
-            const removed = outputList.splice(0, 200);
-            removed.forEach(val => valueCounts[val] = Math.max(0, valueCounts[val] - 1));
-          }
-          
-          renderOutput();
-          updateHeatmap();
-          updateStats();
-        }
-        
-        renderPendulums();
-        animationFrameId = requestAnimationFrame(update);
-      } catch (error) {
-        console.error("Error in update loop:", error);
+      // Clear existing
+      while (outputGrid.firstChild) {
+        outputGrid.removeChild(outputGrid.firstChild);
       }
+
+      const displayBytes = AppState.outputList.slice(-150);
+
+      displayBytes.forEach((byte, index) => {
+        const byteEl = document.createElement("div");
+        byteEl.className = "byte";
+        byteEl.textContent = byte.toString(16).padStart(2, '0').toUpperCase();
+
+        if (index >= displayBytes.length - 5) {
+          byteEl.style.background = 'rgba(0, 255, 255, 0.3)';
+          byteEl.style.boxShadow = '0 0 5px var(--neon-blue)';
+        }
+
+        outputGrid.appendChild(byteEl);
+      });
     }
 
     function renderPendulums() {
+      if (!AppState.prng || !AppState.svg) return;
+
       try {
-        const positions = prng.getPendulumPositions();
-        svg.innerHTML = '';
-        
-        // Create glow filter
+        const positions = AppState.prng.getPendulumPositions();
+
+        // Clear SVG
+        while (AppState.svg.firstChild) {
+          AppState.svg.removeChild(AppState.svg.firstChild);
+        }
+
+        // Create glow filter (once)
         const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
         const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
         filter.setAttribute("id", "glow");
-        
+
         const blur = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
         blur.setAttribute("stdDeviation", "2");
         blur.setAttribute("result", "coloredBlur");
-        
+
         const merge = document.createElementNS("http://www.w3.org/2000/svg", "feMerge");
         const mergeNode1 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
         mergeNode1.setAttribute("in", "coloredBlur");
         const mergeNode2 = document.createElementNS("http://www.w3.org/2000/svg", "feMergeNode");
         mergeNode2.setAttribute("in", "SourceGraphic");
-        
+
         merge.appendChild(mergeNode1);
         merge.appendChild(mergeNode2);
         filter.appendChild(blur);
         filter.appendChild(merge);
         defs.appendChild(filter);
-        svg.appendChild(defs);
-        
+        AppState.svg.appendChild(defs);
+
         positions.forEach((pos, i) => {
-          const pendulum = prng.pendulums[i];
+          const pendulum = AppState.prng.pendulums[i];
           const hue = (i * 45) % 360;
           const color = `hsl(${hue}, 80%, 60%)`;
-          
+
           // Draw trail
-          if (pos.trail.length > 1) {
+          if (pos.trail && pos.trail.length > 1) {
             for (let j = 1; j < pos.trail.length; j++) {
               const alpha = j / pos.trail.length * 0.5;
               const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -821,10 +1602,10 @@
               line.setAttribute("stroke", color);
               line.setAttribute("stroke-width", "1");
               line.setAttribute("opacity", alpha);
-              svg.appendChild(line);
+              AppState.svg.appendChild(line);
             }
           }
-          
+
           // Draw first rod
           const rod1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
           rod1.setAttribute("x1", pendulum.origin.x);
@@ -834,8 +1615,8 @@
           rod1.setAttribute("stroke", color);
           rod1.setAttribute("stroke-width", "3");
           rod1.setAttribute("class", "glow");
-          svg.appendChild(rod1);
-          
+          AppState.svg.appendChild(rod1);
+
           // Draw second rod
           const rod2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
           rod2.setAttribute("x1", pos.x1);
@@ -845,8 +1626,8 @@
           rod2.setAttribute("stroke", color);
           rod2.setAttribute("stroke-width", "3");
           rod2.setAttribute("class", "glow");
-          svg.appendChild(rod2);
-          
+          AppState.svg.appendChild(rod2);
+
           // Draw first bob
           const bob1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
           bob1.setAttribute("cx", pos.x1);
@@ -856,8 +1637,8 @@
           bob1.setAttribute("stroke", "#fff");
           bob1.setAttribute("stroke-width", "1");
           bob1.setAttribute("class", "glow");
-          svg.appendChild(bob1);
-          
+          AppState.svg.appendChild(bob1);
+
           // Draw second bob
           const bob2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
           bob2.setAttribute("cx", pos.x2);
@@ -867,89 +1648,469 @@
           bob2.setAttribute("stroke", "#fff");
           bob2.setAttribute("stroke-width", "1");
           bob2.setAttribute("class", "glow");
-          svg.appendChild(bob2);
+          AppState.svg.appendChild(bob2);
         });
       } catch (error) {
         console.error("Error rendering pendulums:", error);
       }
     }
 
-    function renderOutput() {
-      try {
-        const outputGrid = document.getElementById("outputGrid");
-        outputGrid.innerHTML = "";
-        
-        const displayBytes = outputList.slice(-150);
-        
-        displayBytes.forEach((byte, index) => {
-          const byteEl = document.createElement("div");
-          byteEl.className = "byte";
-          byteEl.textContent = byte.toString(16).padStart(2, '0').toUpperCase();
-          
-          // Highlight recent bytes
-          if (index >= displayBytes.length - 5) {
-            byteEl.style.background = 'rgba(0, 255, 255, 0.3)';
-            byteEl.style.boxShadow = '0 0 5px var(--neon-blue)';
-          }
-          
-          outputGrid.appendChild(byteEl);
-        });
-      } catch (error) {
-        console.error("Error rendering output:", error);
-      }
-    }
-
     function updateStats() {
       try {
         // Update entropy
-        const entropy = calculateEntropy(outputList);
+        const entropy = calculateEntropy(AppState.outputList);
         const entropyBar = document.getElementById("entropyBar");
         const entropyText = document.getElementById("entropyText");
-        
-        const entropyPercent = (entropy / 8) * 100;
-        entropyBar.style.width = `${entropyPercent}%`;
-        entropyText.textContent = `${entropy.toFixed(4)} bits`;
-        
+
+        if (entropyBar && entropyText) {
+          const entropyPercent = (entropy / 8) * 100;
+          entropyBar.style.width = `${clamp(entropyPercent, 0, 100)}%`;
+          entropyText.textContent = `${entropy.toFixed(4)} bits`;
+        }
+
         // Update bit distribution
-        const bits = outputList.map(b => b.toString(2).padStart(8, '0')).join('');
+        const bits = AppState.outputList.map(b => b.toString(2).padStart(8, '0')).join('');
         const zeros = bits.split('').filter(b => b === '0').length;
         const ones = bits.length - zeros;
         const total = bits.length || 1;
-        
+
         const zerosBar = document.getElementById("zerosBar");
         const onesBar = document.getElementById("onesBar");
         const biasText = document.getElementById("biasText");
-        
-        const zerosPercent = (zeros / total) * 100;
-        const onesPercent = (ones / total) * 100;
-        
-        zerosBar.style.flex = `${zerosPercent}`;
-        onesBar.style.flex = `${onesPercent}`;
-        biasText.textContent = `0s: ${zeros} (${zerosPercent.toFixed(1)}%), 1s: ${ones} (${onesPercent.toFixed(1)}%)`;
-        
+
+        if (zerosBar && onesBar && biasText) {
+          const zerosPercent = (zeros / total) * 100;
+          const onesPercent = (ones / total) * 100;
+
+          zerosBar.style.flex = `${zerosPercent}`;
+          onesBar.style.flex = `${onesPercent}`;
+          biasText.textContent = `0s: ${zeros} (${zerosPercent.toFixed(1)}%), 1s: ${ones} (${onesPercent.toFixed(1)}%)`;
+        }
+
+        // Update sample count
+        const sampleCount = document.getElementById('sampleCount');
+        if (sampleCount) {
+          sampleCount.textContent = `${AppState.totalSamplesGenerated}/${CONFIG.MAX_TOTAL_SAMPLES}`;
+        }
+
+        // Update pendulum count
+        const pendulumCount = document.getElementById('pendulumCount');
+        if (pendulumCount && AppState.prng) {
+          const healthy = AppState.prng.pendulums.filter(p => p.isHealthy).length;
+          pendulumCount.textContent = `${healthy}/${CONFIG.MAX_PENDULUMS}`;
+        }
+
       } catch (error) {
         console.error("Error updating stats:", error);
       }
     }
 
-    function calculateEntropy(data) {
-      if (data.length < 2) return 0;
-      
+    // ============================================================================
+    // ANIMATION LOOP
+    // ============================================================================
+
+    let frameCount = 0;
+
+    function update(timestamp) {
+      // Check if we should stop
+      if (!AppState.isRunning) {
+        return;
+      }
+
+      // Acquire lock
+      if (AppState.updateLock) {
+        AppState.animationFrameId = requestAnimationFrame(update);
+        return;
+      }
+
+      AppState.updateLock = true;
+
       try {
-        const freq = {};
-        data.forEach(b => freq[b] = (freq[b] || 0) + 1);
-        const total = data.length;
-        return Object.values(freq)
-          .map(f => f / total)
-          .reduce((acc, p) => acc - p * Math.log2(p), 0);
+        // Record frame for health monitoring
+        if (AppState.healthMonitor) {
+          AppState.healthMonitor.recordFrame(timestamp || performance.now());
+        }
+
+        // Check health
+        if (AppState.healthMonitor && !AppState.healthMonitor.checkHealth(AppState.prng)) {
+          AppState.updateLock = false;
+          return;
+        }
+
+        // Get validated speed
+        const speed = AppState.sliders.speed ? AppState.sliders.speed.getValue() : 5;
+        const safeSpeed = clamp(Math.floor(speed), CONFIG.SPEED_MIN, CONFIG.SPEED_MAX);
+
+        // Step physics
+        for (let i = 0; i < safeSpeed; i++) {
+          AppState.prng.stepAll(CONFIG.PHYSICS_DT);
+        }
+
+        // Generate byte at controlled rate
+        const byte = AppState.prng.generateByte();
+        if (byte !== null) {
+          // Validate byte
+          if (typeof byte !== 'number' || byte < CONFIG.BYTE_MIN || byte > CONFIG.BYTE_MAX || !Number.isInteger(byte)) {
+            throw new Error(`Invalid byte generated: ${byte}`);
+          }
+
+          // Check total sample limit
+          if (AppState.totalSamplesGenerated >= CONFIG.MAX_TOTAL_SAMPLES) {
+            console.warn('Maximum sample limit reached');
+            AppState.stopAnimation();
+            Modal.show('Sample Limit Reached',
+              `Maximum sample limit (${CONFIG.MAX_TOTAL_SAMPLES}) reached. Click Reset to continue.`);
+            AppState.updateLock = false;
+            return;
+          }
+
+          AppState.totalSamplesGenerated++;
+          AppState.outputList.push(byte);
+          AppState.valueCounts[byte]++;
+          AppState.snapshotDirty = true;
+
+          // Enforce hard limit on output array
+          if (AppState.outputList.length > CONFIG.MAX_OUTPUT_SIZE) {
+            const removeCount = Math.floor(CONFIG.MAX_OUTPUT_SIZE * 0.1);
+            const removed = AppState.outputList.splice(0, removeCount);
+            removed.forEach(val => {
+              if (val >= 0 && val < AppState.valueCounts.length) {
+                AppState.valueCounts[val] = Math.max(0, AppState.valueCounts[val] - 1);
+              }
+            });
+          }
+
+          // Record byte for health monitoring
+          if (AppState.healthMonitor) {
+            AppState.healthMonitor.recordByte();
+          }
+
+          // Update displays
+          renderOutput();
+
+          // Update snapshot for heatmap (every 3rd frame to reduce overhead)
+          if (frameCount % 3 === 0 && AppState.snapshotDirty) {
+            AppState.valueCountsSnapshot = [...AppState.valueCounts];
+            AppState.snapshotDirty = false;
+            updateHeatmap();
+          }
+
+          updateStats();
+        }
+
+        // Render pendulums
+        renderPendulums();
+
+        // Update health monitor display
+        if (AppState.healthMonitor && frameCount % 10 === 0) {
+          AppState.healthMonitor.updateDisplay();
+        }
+
+        frameCount++;
+
       } catch (error) {
-        console.error("Error calculating entropy:", error);
-        return 0;
+        console.error('Error in update loop:', error);
+        if (AppState.healthMonitor) {
+          AppState.healthMonitor.recordError(error);
+        }
+      } finally {
+        AppState.updateLock = false;
+      }
+
+      // Continue animation
+      AppState.animationFrameId = requestAnimationFrame(update);
+    }
+
+    // ============================================================================
+    // EVENT HANDLERS
+    // ============================================================================
+
+    function setupEventListeners() {
+      // Setup validated sliders
+      AppState.sliders.seed = new ValidatedSlider('seedSlider',
+        CONFIG.SEED_MIN, CONFIG.SEED_MAX, 50, (value) => {
+          if (AppState.prng) {
+            AppState.prng.updateSeedOffset(value);
+          }
+        });
+
+      AppState.sliders.force = new ValidatedSlider('forceSlider',
+        CONFIG.FORCE_MIN, CONFIG.FORCE_MAX, 30, null);
+
+      AppState.sliders.speed = new ValidatedSlider('speedSlider',
+        CONFIG.SPEED_MIN, CONFIG.SPEED_MAX, 5, null);
+
+      // Reset button
+      const resetBtn = document.getElementById('resetBtn');
+      if (resetBtn) {
+        const resetHandler = () => {
+          AppState.reset();
+        };
+        resetBtn.addEventListener('click', resetHandler);
+        AppState.eventHandlers.set('resetBtn', { element: resetBtn, event: 'click', handler: resetHandler });
+      }
+
+      // Export button
+      const exportBtn = document.getElementById('exportBtn');
+      if (exportBtn) {
+        const exportHandler = () => {
+          try {
+            // Create immutable snapshot
+            const snapshot = [...AppState.outputList];
+
+            // Validate data
+            const sanitized = snapshot.map(byte => {
+              if (typeof byte !== 'number' || byte < 0 || byte > 255 || !Number.isInteger(byte)) {
+                console.warn('Invalid byte in output:', byte);
+                return 0;
+              }
+              return byte;
+            });
+
+            const timestamp = new Date().toISOString();
+            const entropy = calculateEntropy(sanitized);
+
+            // Format output with metadata
+            const output = [
+              '# Chaotic Pendulum PRNG Output - Production Build v2.0',
+              `# Generated: ${timestamp}`,
+              `# Samples: ${sanitized.length}`,
+              `# Entropy: ${entropy.toFixed(4)} bits`,
+              `# Seed: ${AppState.sliders.seed.getValue()}`,
+              `# Force: ${AppState.sliders.force.getValue()}`,
+              `# Speed: ${AppState.sliders.speed.getValue()}`,
+              '# ',
+              '# ⚠️ WARNING: NOT FOR CRYPTOGRAPHIC USE',
+              '# This output is from a demonstration PRNG and should NOT be used',
+              '# for security-sensitive applications, cryptographic keys, passwords,',
+              '# session tokens, or any production security system.',
+              '#',
+              '# Hex values (one per line):',
+              ...sanitized.map(b => b.toString(16).padStart(2, '0').toUpperCase())
+            ].join('\n');
+
+            const blob = new Blob([output], { type: 'text/plain; charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `prng_output_${Date.now()}.txt`;
+
+            document.body.appendChild(a);
+            a.click();
+
+            setTimeout(() => {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }, 100);
+
+          } catch (error) {
+            console.error("Export failed:", error);
+            Modal.show('Export Failed', 'Failed to export data. See console for details.', true);
+          }
+        };
+        exportBtn.addEventListener('click', exportHandler);
+        AppState.eventHandlers.set('exportBtn', { element: exportBtn, event: 'click', handler: exportHandler });
+      }
+
+      // Health check button
+      const healthCheckBtn = document.getElementById('healthCheckBtn');
+      if (healthCheckBtn) {
+        const healthCheckHandler = () => {
+          if (!AppState.healthMonitor) return;
+
+          const status = AppState.healthMonitor.getStatus();
+          const healthyPendulums = AppState.prng ?
+            AppState.prng.pendulums.filter(p => p.isHealthy).length : 0;
+
+          const message = `
+System Health: ${status.healthy ? 'HEALTHY' : 'CRITICAL'}
+FPS: ${status.metrics.frameRate.toFixed(1)}
+Memory: ${status.metrics.memoryUsage.toFixed(0)} MB
+Healthy Pendulums: ${healthyPendulums}/${CONFIG.MAX_PENDULUMS}
+Error Count: ${status.metrics.errorCount}
+Total Samples: ${AppState.totalSamplesGenerated}
+          `.trim();
+
+          Modal.show('Health Check', message, !status.healthy);
+        };
+        healthCheckBtn.addEventListener('click', healthCheckHandler);
+        AppState.eventHandlers.set('healthCheckBtn', { element: healthCheckBtn, event: 'click', handler: healthCheckHandler });
+      }
+
+      // Mouse movement
+      const container = document.getElementById('canvas-container');
+      if (container) {
+        const mouseMoveHandler = (e) => {
+          if (!AppState.prng) return;
+
+          const rect = e.currentTarget.getBoundingClientRect();
+          const mouseX = clamp(e.clientX - rect.left, 0, rect.width);
+          const mouseY = clamp(e.clientY - rect.top, 0, rect.height);
+
+          const forceFactor = AppState.sliders.force ?
+            AppState.sliders.force.getValue() / 5 : 6;
+
+          AppState.prng.applyMouseForce(mouseX, mouseY, forceFactor);
+        };
+
+        const mouseLeaveHandler = () => {
+          const forceIndicator = document.getElementById('forceIndicator');
+          if (forceIndicator) {
+            forceIndicator.style.display = 'none';
+          }
+        };
+
+        container.addEventListener('mousemove', mouseMoveHandler);
+        container.addEventListener('mouseleave', mouseLeaveHandler);
+
+        AppState.eventHandlers.set('containerMouseMove', {
+          element: container, event: 'mousemove', handler: mouseMoveHandler
+        });
+        AppState.eventHandlers.set('containerMouseLeave', {
+          element: container, event: 'mouseleave', handler: mouseLeaveHandler
+        });
+      }
+
+      // Resize handler with debouncing
+      const resizeHandler = () => {
+        clearTimeout(AppState.resizeTimeout);
+        AppState.resizeTimeout = setTimeout(() => {
+          if (AppState.updateLock) {
+            AppState.resizePending = true;
+            return;
+          }
+
+          handleResize();
+        }, 250);
+      };
+
+      window.addEventListener('resize', resizeHandler);
+      AppState.eventHandlers.set('windowResize', {
+        element: window, event: 'resize', handler: resizeHandler
+      });
+    }
+
+    function handleResize() {
+      const wasRunning = AppState.isRunning;
+      AppState.stopAnimation();
+
+      try {
+        const container = document.getElementById('canvas-container');
+        if (!container || !AppState.svg) return;
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        AppState.svg.setAttribute('width', width);
+        AppState.svg.setAttribute('height', height);
+
+        if (AppState.prng) {
+          AppState.prng.updatePendulumOrigins(width, height);
+        }
+      } finally {
+        if (wasRunning) {
+          AppState.startAnimation();
+        }
       }
     }
 
+    function cleanupEventListeners() {
+      AppState.eventHandlers.forEach(({ element, event, handler }) => {
+        element.removeEventListener(event, handler);
+      });
+      AppState.eventHandlers.clear();
+
+      // Cleanup sliders
+      Object.values(AppState.sliders).forEach(slider => {
+        if (slider && slider.destroy) {
+          slider.destroy();
+        }
+      });
+    }
+
+    // ============================================================================
+    // INITIALIZATION
+    // ============================================================================
+
+    function initApplication() {
+      if (AppState.initializationLock) {
+        console.warn('Initialization already in progress');
+        return;
+      }
+
+      AppState.initializationLock = true;
+
+      try {
+        console.log('Initializing Chaotic Pendulum PRNG v2.0...');
+
+        // Check for crypto support
+        if (typeof crypto === 'undefined' || !crypto.getRandomValues) {
+          Modal.show('Browser Not Supported',
+            'Your browser does not support crypto.getRandomValues(). This application requires a modern browser with Web Crypto API support.',
+            true);
+          return;
+        }
+
+        // Stop any existing animation
+        AppState.stopAnimation();
+
+        // Cleanup old event listeners
+        cleanupEventListeners();
+
+        // Initialize health monitor
+        AppState.healthMonitor = new HealthMonitor();
+
+        // Get SVG element
+        const container = document.getElementById('canvas-container');
+        AppState.svg = document.getElementById('pendulumCanvas');
+
+        if (!container || !AppState.svg) {
+          throw new Error('Required DOM elements not found');
+        }
+
+        AppState.svg.setAttribute('width', container.clientWidth);
+        AppState.svg.setAttribute('height', container.clientHeight);
+
+        // Create PRNG
+        const seedOffset = 50;
+        AppState.prng = new ChaoticPRNG(seedOffset);
+
+        // Initialize UI
+        initHeatmap();
+        setupEventListeners();
+
+        // Start animation
+        AppState.startAnimation();
+
+        console.log('Initialization complete!');
+
+      } catch (error) {
+        console.error('Initialization error:', error);
+        Modal.show('Initialization Error',
+          `Failed to initialize application: ${error.message}\n\nPlease refresh the page.`,
+          true);
+      } finally {
+        AppState.initializationLock = false;
+      }
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      AppState.stopAnimation();
+      cleanupEventListeners();
+    });
+
     // Initialize when DOM is loaded
-    document.addEventListener("DOMContentLoaded", initApplication);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApplication);
+    } else {
+      initApplication();
+    }
+
+    // Expose for debugging (remove in production)
+    window.AppState = AppState;
+    window.CONFIG = CONFIG;
+
   </script>
 </body>
 </html>
